@@ -1,11 +1,7 @@
 streamlit
-qiskit
-qiskit-aer
+qiskit==0.46.0
+qiskit-aer==0.13.3
 plotly
 numpy
 pandas
 matplotlib
-hashlib
-time
-io
-datetime
