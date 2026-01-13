@@ -1,0 +1,11 @@
+streamlit
+qiskit
+qiskit-aer
+plotly
+numpy
+pandas
+matplotlib
+hashlib
+time
+io
+datetime
