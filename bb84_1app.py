@@ -365,9 +365,9 @@ def plotly_bloch_sphere(states):
     fig.add_trace(go.Surface(x=x, y=y, z=z, opacity=0.1, colorscale='Blues', showscale=False))
 
     # Axes
-    fig.add_trace(go.Scatter3d(x=[0,0], y=[0,0], z=[-1,1], mode='lines', line=dict(color='red', width=3), name='Z-axis'))
-    fig.add_trace(go.Scatter3d(x=[-1,1], y=[0,0], z=[0,0], mode='lines', line=dict(color='green', width=3), name='X-axis'))
-    fig.add_trace(go.Scatter3d(x=[0,0], y=[-1,1], z=[0,0], mode='lines', line=dict(color='blue', width=3), name='Y-axis'))
+    fig.add_trace(go.Scatter3d(x=[0,0], y=[0,0], z=[-1,1], mode='lines', line=dict(color='red', width=4), name='Z-axis'))
+    fig.add_trace(go.Scatter3d(x=[-1,1], y=[0,0], z=[0,0], mode='lines', line=dict(color='green', width=4), name='X-axis'))
+    fig.add_trace(go.Scatter3d(x=[0,0], y=[-1,1], z=[0,0], mode='lines', line=dict(color='blue', width=4), name='Y-axis'))
 
     # Axis labels
     fig.add_trace(go.Scatter3d(x=[1.1], y=[0], z=[0], mode='text', text=['X'], textfont=dict(size=14, color='green'), name='X-label'))
@@ -375,6 +375,7 @@ def plotly_bloch_sphere(states):
     fig.add_trace(go.Scatter3d(x=[0], y=[0], z=[1.1], mode='text', text=['Z'], textfont=dict(size=14, color='red'), name='Z-label'))
 
     # States
+    colors = ['orange', 'purple', 'cyan', 'magenta', 'yellow', 'lime']  # More visible colors
     for i, sv in enumerate(states):
         if hasattr(sv, 'data'):
             # Statevector
@@ -391,7 +392,11 @@ def plotly_bloch_sphere(states):
         y_p = np.sin(theta) * np.sin(phi)
         z_p = np.cos(theta)
 
-        fig.add_trace(go.Scatter3d(x=[x_p], y=[y_p], z=[z_p], mode='markers+text', marker=dict(size=10, color='red'), text=[f'Qubit {i}'], textfont=dict(size=10), name=f'Qubit {i}'))
+        color = colors[i % len(colors)]
+        fig.add_trace(go.Scatter3d(x=[x_p], y=[y_p], z=[z_p], mode='markers+text',
+                                  marker=dict(size=12, color=color, symbol='diamond'),
+                                  text=[f'Qubit {i}'], textfont=dict(size=12, color=color),
+                                  name=f'Qubit {i}'))
 
     fig.update_layout(scene=dict(xaxis_visible=False, yaxis_visible=False, zaxis_visible=False), height=600)
     return fig
@@ -467,6 +472,10 @@ def create_pdf_report_with_graphs(
             lines.append("Reason: QBER exceeds threshold. Key exchange should be aborted.")
         else:
             lines.append("✅ Channel Secure. QBER below threshold. Key exchange successful.")
+        
+        lines.append("")
+        lines.append("COMPARISON: No Eve vs With Eve")
+        lines.append("vs")
 
         fig1.text(0.06, 0.95, "\n".join(lines), va="top", fontsize=11, family="monospace")
         pdf.savefig(fig1, bbox_inches="tight")
@@ -503,6 +512,10 @@ def create_pdf_report_with_graphs(
 
         plt.suptitle("Comparison: Without Eve vs With Eve", fontsize=14, fontweight="bold")
         plt.tight_layout()
+        
+        # Add "vs" text at the bottom
+        fig4.text(0.5, 0.02, "vs", ha='center', va='bottom', fontsize=20, fontweight='bold', color='red')
+        
         pdf.savefig(fig4, bbox_inches="tight")
         plt.close(fig4)
 
@@ -515,6 +528,12 @@ def create_pdf_report_with_graphs(
 # MAIN APP
 # ============================================================
 def main():
+    st.set_page_config(
+        page_title="bb84-qkd-simulator-jntu",
+        page_icon="jntua_logo.png",
+        layout="wide"
+    )
+    
     st.markdown("""
     <style>
     .stButton>button {
@@ -593,10 +612,10 @@ def main():
     """, unsafe_allow_html=True)
 
     # Header (ONE LOGO)
-    left, center = st.columns([4, 8])
+    left, center = st.columns([2, 8])
     with left:
         try:
-            st.image("jntua_logo.png", width=400)
+            st.image("jntua_logo.png", width=200)
         except Exception:
             st.write("Logo not found")
 
@@ -610,7 +629,7 @@ def main():
                 Department of Electronics and Communication Engineering
             </h4>
             <h3 style="text-align:left; margin-top:10px;">
-                AQVH FINAL: Advanced BB84 Quantum Key Distribution Simulator
+                bb84-qkd-simulator-jntu: AQVH FINAL BB84 Quantum Key Distribution Simulator
             </h3>
             """,
             unsafe_allow_html=True
@@ -622,8 +641,37 @@ def main():
         st.session_state.anim_running = False
     if "anim_s" not in st.session_state:
         st.session_state.anim_s = 0
-    if "animation_shown" not in st.session_state:
-        st.session_state.animation_shown = False
+    if "anim_running_no" not in st.session_state:
+        st.session_state.anim_running_no = False
+    if "anim_s_no" not in st.session_state:
+        st.session_state.anim_s_no = 0
+    if "anim_running_eve" not in st.session_state:
+        st.session_state.anim_running_eve = False
+    if "anim_s_eve" not in st.session_state:
+        st.session_state.anim_s_eve = 0
+    if "viz_mode" not in st.session_state:
+        st.session_state.viz_mode = "single"
+    if "simulation_run" not in st.session_state:
+        st.session_state.simulation_run = False
+    # Parameter session state
+    if "num_bits" not in st.session_state:
+        st.session_state.num_bits = 200
+    if "threshold" not in st.session_state:
+        st.session_state.threshold = 0.11
+    if "eve_prob" not in st.session_state:
+        st.session_state.eve_prob = 0.5
+    if "eve_attack" not in st.session_state:
+        st.session_state.eve_attack = "Intercept-Resend"
+    if "noise_prob" not in st.session_state:
+        st.session_state.noise_prob = 0.01
+    if "window" not in st.session_state:
+        st.session_state.window = 80
+    if "speed" not in st.session_state:
+        st.session_state.speed = 0.08
+    if "pdf_max" not in st.session_state:
+        st.session_state.pdf_max = 50
+    if "sifted_display_size" not in st.session_state:
+        st.session_state.sifted_display_size = 20
 
     sim = BB84Simulator()
 
@@ -669,58 +717,95 @@ def main():
     - Visualizes timelines, Bloch spheres, and generates reports.
     """)
 
-    # Simulation Controls
+    # Simulation Controls (Sidebar)
     with st.sidebar:
-        st.header("🎯 Simulation Controls")
-        num_bits = st.slider("Qubits to transmit", 50, 2000, 50, step=50)
-        threshold = st.slider("QBER Threshold", 0.00, 0.25, 0.11, step=0.01)
-        eve_prob = st.slider("Eve Interception Probability", 0.0, 1.0, 0.5, step=0.05)
-        eve_attack = st.selectbox("Eve Attack Type", ["Intercept-Resend"], index=0)
-        noise_prob = st.slider("Channel Noise Probability", 0.0, 0.1, 0.01, step=0.005)
-        window = st.slider("Timeline Window Size", 30, 250, 80, step=10)
-        speed = st.slider("Animation Speed", 0.02, 0.30, 0.08, step=0.01)
-        pdf_max = st.slider("PDF-style timeline max bits", 20, 200, 50, step=10)
-        sifted_display_size = st.slider("Sifted Key Display Size", 10, 200, 20, step=10)
+        st.header("🎯 Quick Simulation Controls")
+        st.markdown("**Quick parameter adjustments**")
+        num_bits_sidebar = st.slider("Qubits to transmit", 50, 2000, 200, step=50, key="sidebar_num_bits")
+        threshold_sidebar = st.slider("QBER Threshold", 0.00, 0.25, 0.11, step=0.01, key="sidebar_threshold")
+        eve_prob_sidebar = st.slider("Eve Interception Probability", 0.0, 1.0, 0.5, step=0.05, key="sidebar_eve_prob")
+        eve_attack_sidebar = st.selectbox("Eve Attack Type", ["Intercept-Resend"], index=0, key="sidebar_eve_attack")
+        noise_prob_sidebar = st.slider("Channel Noise Probability", 0.0, 0.1, 0.01, step=0.005, key="sidebar_noise_prob")
+        window_sidebar = st.slider("Timeline Window Size", 30, 250, 80, step=10, key="sidebar_window")
+        speed_sidebar = st.slider("Animation Speed", 0.02, 0.30, 0.08, step=0.01, key="sidebar_speed")
+        pdf_max_sidebar = st.slider("PDF-style timeline max bits", 20, 200, 50, step=10, key="sidebar_pdf_max")
+        sifted_display_size_sidebar = st.slider("Sifted Key Display Size", 10, 200, 20, step=10, key="sidebar_sifted_display")
 
-    # Main area start button
-    col1, col2 = st.columns([3,1])
-    with col2:
-        start_sim = st.button("**Start Simulation**", type="primary")
+        # Sync sidebar values to main parameters
+        if st.button("🔄 Sync from Sidebar", help="Update main parameters with sidebar values"):
+            st.session_state.num_bits = num_bits_sidebar
+            st.session_state.threshold = threshold_sidebar
+            st.session_state.eve_prob = eve_prob_sidebar
+            st.session_state.eve_attack = eve_attack_sidebar
+            st.session_state.noise_prob = noise_prob_sidebar
+            st.session_state.window = window_sidebar
+            st.session_state.speed = speed_sidebar
+            st.session_state.pdf_max = pdf_max_sidebar
+            st.session_state.sifted_display_size = sifted_display_size_sidebar
+            st.rerun()
 
-    if start_sim:
-        with st.spinner("🔬 **Running Advanced BB84 Quantum Simulation...**"):
-            progress_bar = st.progress(0)
-            progress_bar.progress(25, text="Initializing quantum simulator...")
+    # Simulation Parameters
+    st.header("⚙️ Simulation Parameters")
+    st.markdown("**Configure the parameters for the BB84 simulation. Adjust as needed before running.**")
 
-            alice_bits = np.random.randint(0, 2, num_bits)
-            alice_bases = np.random.randint(0, 2, num_bits)
-            bob_bases = np.random.randint(0, 2, num_bits)
+    param_col1, param_col2, param_col3 = st.columns(3)
+    with param_col1:
+        num_bits = st.slider("📡 Qubits to transmit", 50, 2000, 
+                           st.session_state.get('num_bits', 200), step=50, 
+                           help="Number of qubits Alice will send to Bob")
+        threshold = st.slider("📊 QBER Threshold", 0.00, 0.25, 
+                            st.session_state.get('threshold', 0.11), step=0.01, 
+                            help="Maximum acceptable Quantum Bit Error Rate")
+    with param_col2:
+        eve_prob = st.slider("🕵️ Eve Interception Probability", 0.0, 1.0, 
+                           st.session_state.get('eve_prob', 0.5), step=0.05, 
+                           help="Probability that Eve intercepts each qubit")
+        noise_prob = st.slider("📶 Channel Noise Probability", 0.0, 0.1, 
+                             st.session_state.get('noise_prob', 0.01), step=0.005, 
+                             help="Probability of bit flip due to channel noise")
+    with param_col3:
+        eve_attack = st.selectbox("🔧 Eve Attack Type", ["Intercept-Resend"], 
+                                index=0 if st.session_state.get('eve_attack', "Intercept-Resend") == "Intercept-Resend" else 0, 
+                                help="Type of eavesdropping attack")
+        window = st.slider("📈 Timeline Window Size", 30, 250, 
+                         st.session_state.get('window', 80), step=10, 
+                         help="Size of the timeline window for visualization")
+        speed = st.slider("⚡ Animation Speed", 0.02, 0.30, 
+                        st.session_state.get('speed', 0.08), step=0.01, 
+                        help="Speed of the animation in seconds")
+        pdf_max = st.slider("📄 PDF-style timeline max bits", 20, 200, 
+                          st.session_state.get('pdf_max', 50), step=10, 
+                          help="Maximum bits to show in PDF-style timeline")
+        sifted_display_size = st.slider("🔑 Sifted Key Display Size", 10, 200, 
+                                      st.session_state.get('sifted_display_size', 20), step=10, 
+                                      help="Number of sifted bits to display in tables")
 
-            progress_bar.progress(50, text="Simulating quantum transmission...")
-            bob_no_eve, eve_results_no = sim.simulate_transmission(alice_bits, alice_bases, bob_bases, eve_present=False, noise_prob=noise_prob)
-            bob_eve, eve_results_eve = sim.simulate_transmission(alice_bits, alice_bases, bob_bases, eve_present=True, eve_intercept_prob=eve_prob, noise_prob=noise_prob)
+    # Display current parameters
+    st.markdown("---")
+    st.subheader("📋 Current Simulation Parameters")
+    params_summary = f"""
+    | Parameter | Value |
+    |-----------|-------|
+    | Qubits to Transmit | {num_bits} |
+    | QBER Threshold | {threshold:.2f} |
+    | Eve Interception Probability | {eve_prob:.2f} |
+    | Channel Noise Probability | {noise_prob:.4f} |
+    | Eve Attack Type | {eve_attack} |
+    | Timeline Window Size | {window} |
+    | Animation Speed | {speed:.2f}s |
+    | PDF Timeline Max Bits | {pdf_max} |
+    | Sifted Key Display Size | {sifted_display_size} |
+    """
+    st.markdown(params_summary)
 
-            progress_bar.progress(75, text="Analyzing results and generating reports...")
-            def compute(t_bob):
-                timeline = create_transmission_timeline(alice_bits, alice_bases, bob_bases, t_bob)
-                used = timeline[timeline["Used"] == True]
-                errors = int(((used["Error"] == True)).sum())
-                qber = errors / len(used) if len(used) > 0 else 0.0
-                sec = sim.assess_security(float(qber), float(threshold))
-                status = sec['status']
+    # Run Simulation Button
+    st.markdown("---")
+    run_button = st.button("**Run BB84 Simulation**", type="primary", help="Click to start the quantum key distribution simulation with the above parameters")
 
-                sifted_key = used["AliceBit"].astype(int).tolist()
-                final_key = sim.privacy_amplification(sifted_key, qber) if status == "SECURE" else []
+    if run_button or st.session_state.simulation_run:
+        st.session_state.simulation_run = True
 
-                return timeline, errors, qber, status, len(used), len(final_key)
-
-            tl_no_eve, err_no, qber_no, stat_no, sift_no, key_no = compute(bob_no_eve)
-            tl_eve, err_e, qber_e, stat_e, sift_e, key_e = compute(bob_eve)
-
-            progress_bar.progress(100, text="Simulation complete!")
-            progress_bar.empty()
-
-
+        # Main area
         with st.spinner("🔬 **Running BB84 Quantum Simulation...**"):
             progress_bar = st.progress(0)
             progress_bar.progress(25, text="Initializing quantum simulator...")
@@ -756,14 +841,8 @@ def main():
             st.success("✅ **Simulation completed successfully!**")
             st.balloons()
 
-        # BB84 Process Animation
-        st.markdown("### **BB84 Process Animation**")
-
-        anim_scenario = st.selectbox("**Select Scenario for Animation:**", ["Without Eve", "With Eve"], index=0)
-        anim_speed = st.slider("**Animation Speed (seconds per step):**", 0.5, 3.0, 1.0, step=0.1)
-
-        if st.button("**Start BB84 Animation**", type="primary") or st.session_state.animation_shown:
-            st.session_state.animation_shown = True
+            # BB84 Process Animation
+            st.markdown("### **BB84 Process Animation**")
 
             progress_bar = st.progress(0)
             anim_placeholder = st.empty()
@@ -772,11 +851,11 @@ def main():
                 ("**Step 1: Alice Generates Random Bits**", "Alice creates random bits and bases for secure communication.", str(alice_bits[:20]) + "..."),
                 ("**Step 2: Alice Prepares Qubits**", "Alice encodes bits into quantum states using chosen bases.", str([state_label(b, a) for b, a in zip(alice_bits[:20], alice_bases[:20])]) + "..."),
                 ("**Step 3: Qubits Sent to Bob**", "Qubits are transmitted through the quantum channel.", "Transmission in progress..."),
-                ("**Step 4: Bob Measures Qubits**", "Bob measures qubits in his randomly chosen bases.", str(bob_no_eve[:20] if anim_scenario == "Without Eve" else bob_eve[:20]) + "..."),
+                ("**Step 4: Bob Measures Qubits**", "Bob measures qubits in his randomly chosen bases.", str(bob_no_eve[:20]) + "..."),
                 ("**Step 5: Basis Announcement**", "Alice and Bob publicly announce their bases (not the bits).", "Bases compared..."),
-                ("**Step 6: Sifting**", "Only bits with matching bases are kept (sifted key).", str(tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].tolist()[:20] if anim_scenario == "Without Eve" else tl_eve[tl_eve["Used"] == True]["AliceBit"].tolist()[:20]) + "..."),
-                ("**Step 7: Error Estimation**", f"QBER calculated to detect eavesdropping: {qber_no:.3f}" if anim_scenario == "Without Eve" else f"QBER: {qber_e:.3f}", "Checking for eavesdropping..."),
-                ("**Step 8: Privacy Amplification**", "Hashing reduces key length for security.", "Key generated securely." if (key_no > 0 if anim_scenario == "Without Eve" else key_e > 0) else "No secure key due to errors.")
+                ("**Step 6: Sifting**", "Only bits with matching bases are kept (sifted key).", str(tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].tolist()[:20]) + "..."),
+                ("**Step 7: Error Estimation**", f"QBER calculated to detect eavesdropping: {qber_no:.3f}", "Checking for eavesdropping..."),
+                ("**Step 8: Privacy Amplification**", "Hashing reduces key length for security.", "Key generated securely." if key_no > 0 else "No secure key due to errors.")
             ]
 
             full_content = ""
@@ -795,12 +874,6 @@ def main():
             progress_bar.empty()
             st.markdown("### ✅ **Animation Complete!**")
 
-            # Reset button
-            if st.button("**Reset Animation**"):
-                st.session_state.animation_shown = False
-                st.rerun()
-
-
             # Action buttons row
             action_col1, action_col2, action_col3, action_col4 = st.columns(4)
             with action_col1:
@@ -816,30 +889,30 @@ def main():
                 if st.button("**Parameter Summary**", help="Show current simulation parameters"):
                     st.session_state.show_params = not st.session_state.get('show_params', False)
 
-        c1, c2 = st.columns(2)
+            c1, c2 = st.columns(2)
 
-        with c1:
-                st.subheader("✅ **No Eavesdropper Scenario**")
-                st.metric("📡 Transmitted Qubits", num_bits)
-                st.metric("🔗 Sifted Bits", sift_no)
-                st.metric("❌ Errors Detected", err_no)
-                st.metric("📊 Quantum Bit Error Rate", f"{qber_no:.4f}")
-                st.metric("🔐 Final Secure Key", key_no)
-                st.metric("⚡ Key Generation Rate", f"{key_no / num_bits:.4f}" if num_bits > 0 else "0")
-                st.plotly_chart(qber_gauge(qber_no, threshold), use_container_width=True, key="gauge_no")
+            with c1:
+                    st.subheader("✅ **No Eavesdropper Scenario**")
+                    st.metric("📡 Transmitted Qubits", num_bits)
+                    st.metric("🔗 Sifted Bits", sift_no)
+                    st.metric("❌ Errors Detected", err_no)
+                    st.metric("📊 Quantum Bit Error Rate", f"{qber_no:.4f}")
+                    st.metric("🔐 Final Secure Key", key_no)
+                    st.metric("⚡ Key Generation Rate", f"{key_no / num_bits:.4f}" if num_bits > 0 else "0")
+                    st.plotly_chart(qber_gauge(qber_no, threshold), use_container_width=True, key="gauge_no")
 
-        with c2:
-                st.subheader("🕵️ **Eavesdropper Present Scenario**")
-                st.metric("📡 Transmitted Qubits", num_bits)
-                st.metric("🔗 Sifted Bits", sift_e)
-                st.metric("❌ Errors Detected", err_e)
-                st.metric("📊 Quantum Bit Error Rate", f"{qber_e:.4f}")
-                st.metric("🔐 Final Secure Key", key_e)
-                st.metric("⚡ Key Generation Rate", f"{key_e / num_bits:.4f}" if num_bits > 0 else "0")
-                st.plotly_chart(qber_gauge(qber_e, threshold), use_container_width=True, key="gauge_e")
+            with c2:
+                    st.subheader("🕵️ **Eavesdropper Present Scenario**")
+                    st.metric("📡 Transmitted Qubits", num_bits)
+                    st.metric("🔗 Sifted Bits", sift_e)
+                    st.metric("❌ Errors Detected", err_e)
+                    st.metric("📊 Quantum Bit Error Rate", f"{qber_e:.4f}")
+                    st.metric("🔐 Final Secure Key", key_e)
+                    st.metric("⚡ Key Generation Rate", f"{key_e / num_bits:.4f}" if num_bits > 0 else "0")
+                    st.plotly_chart(qber_gauge(qber_e, threshold), use_container_width=True, key="gauge_e")
 
-            # Conditional displays
-        if st.session_state.get('show_detailed', False):
+                # Conditional displays
+            if st.session_state.get('show_detailed', False):
                 st.markdown("### 📊 **Detailed Performance Metrics**")
                 det_col1, det_col2 = st.columns(2)
                 with det_col1:
@@ -849,490 +922,553 @@ def main():
                     st.markdown("**With Eve:**")
                     st.info(f"• Efficiency: {sift_e/num_bits:.1%}\n• Security: {stat_e}\n• Key Rate: {key_e/num_bits:.3f}")
 
-        if st.session_state.get('show_errors', False):
-            st.markdown("### 🔍 **Error Pattern Analysis**")
-            err_col1, err_col2 = st.columns(2)
-            with err_col1:
-                st.markdown("**No Eve Error Distribution:**")
-                if err_no > 0:
-                    st.warning(f"Errors found at positions: {tl_no_eve[tl_no_eve['Error']==True]['BitIndex'].tolist()[:10]}...")
-                else:
-                    st.success("No errors detected!")
-            with err_col2:
-                st.markdown("**With Eve Error Distribution:**")
-                if err_e > 0:
-                    st.error(f"Errors found at positions: {tl_eve[tl_eve['Error']==True]['BitIndex'].tolist()[:10]}...")
-                else:
-                    st.info("Unexpected: No errors with Eve present")
+            if st.session_state.get('show_errors', False):
+                st.markdown("### 🔍 **Error Pattern Analysis**")
+                err_col1, err_col2 = st.columns(2)
+                with err_col1:
+                    st.markdown("**No Eve Error Distribution:**")
+                    if err_no > 0:
+                        st.warning(f"Errors found at positions: {tl_no_eve[tl_no_eve['Error']==True]['BitIndex'].tolist()[:10]}...")
+                    else:
+                        st.success("No errors detected!")
+                with err_col2:
+                    st.markdown("**With Eve Error Distribution:**")
+                    if err_e > 0:
+                        st.error(f"Errors found at positions: {tl_eve[tl_eve['Error']==True]['BitIndex'].tolist()[:10]}...")
+                    else:
+                        st.info("Unexpected: No errors with Eve present")
 
-        if st.session_state.get('show_stats', False):
-            st.markdown("### 📈 **Key Generation Statistics**")
-            stat_col1, stat_col2, stat_col3 = st.columns(3)
-            with stat_col1:
-                st.metric("**Raw Key Length**", max(key_no, key_e))
-            with stat_col2:
-                st.metric("**Privacy Amplification**", f"{max(key_no, key_e)/max(sift_no, sift_e):.2f}x" if max(sift_no, sift_e) > 0 else "N/A")
-            with stat_col3:
-                st.metric("**Security Level**", f"2^(-{int(np.log2(1e-6))})")
-        if st.session_state.get('show_params', False):
-            st.markdown("### ⚙️ **Simulation Parameters**")
-            params = {
-                "Qubits Transmitted": num_bits,
-                "QBER Threshold": f"{threshold:.2f}",
-                "Eve Intercept Probability": f"{eve_prob:.2f}",
-                "Channel Noise Probability": f"{noise_prob:.4f}",
-                "Eve Attack Type": eve_attack,
-                "Timeline Window Size": window,
-                "Animation Speed": f"{speed:.2f}s"
-            }
-            st.json(params)
+            if st.session_state.get('show_stats', False):
+                st.markdown("### 📈 **Key Generation Statistics**")
+                stat_col1, stat_col2, stat_col3 = st.columns(3)
+                with stat_col1:
+                    st.metric("**Raw Key Length**", max(key_no, key_e))
+                with stat_col2:
+                    st.metric("**Privacy Amplification**", f"{max(key_no, key_e)/max(sift_no, sift_e):.2f}x" if max(sift_no, sift_e) > 0 else "N/A")
+                with stat_col3:
+                    st.metric("**Security Level**", f"2^(-{int(np.log2(1e-6))})")
+            if st.session_state.get('show_params', False):
+                st.markdown("### ⚙️ **Simulation Parameters**")
+                params = {
+                    "Qubits Transmitted": num_bits,
+                    "QBER Threshold": f"{threshold:.2f}",
+                    "Eve Intercept Probability": f"{eve_prob:.2f}",
+                    "Channel Noise Probability": f"{noise_prob:.4f}",
+                    "Eve Attack Type": eve_attack,
+                    "Timeline Window Size": window,
+                    "Animation Speed": f"{speed:.2f}s"
+                }
+                st.json(params)
             # QBER Analysis Graph (from bb84_app2.py)
-        if sift_no > 0 or sift_e > 0:
-            st.markdown("### 📊 **QBER Analysis**")
-            fig, ax = plt.subplots(figsize=(10, 5))
-            # For No Eve
-            if sift_no > 0:
-                window_size = max(1, sift_no // 10)
-                local_qbers_no = []
-                for i in range(0, sift_no, window_size):
-                    a_w = tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].iloc[i:i + window_size].values
-                    b_w = tl_no_eve[tl_no_eve["Used"] == True]["BobResult"].iloc[i:i + window_size].values
-                    if len(a_w) > 0:
-                        local_qbers_no.append(float(np.mean(a_w != b_w)))
-                ax.plot(local_qbers_no, 'bo-', label=f'No Eve Local QBER (Overall: {qber_no:.3f})')
-
-            # For With Eve
-            if sift_e > 0:
-                window_size = max(1, sift_e // 10)
-                local_qbers_e = []
-                for i in range(0, sift_e, window_size):
-                    a_w = tl_eve[tl_eve["Used"] == True]["AliceBit"].iloc[i:i + window_size].values
-                    b_w = tl_eve[tl_eve["Used"] == True]["BobResult"].iloc[i:i + window_size].values
-                    if len(a_w) > 0:
-                        local_qbers_e.append(float(np.mean(a_w != b_w)))
-                ax.plot(local_qbers_e, 'ro-', label=f'With Eve Local QBER (Overall: {qber_e:.3f})')
-
-            ax.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold {threshold}')
-            ax.set_xlabel('Window Index')
-            ax.set_ylabel('Error Rate')
-            ax.set_title('Quantum Bit Error Rate (QBER) Analysis')
-            ax.legend()
-            ax.grid(alpha=0.3)
-            st.pyplot(fig)
-
-            # Sifted Bits Table (from bb84_app2.py)
-            st.markdown("### 📋 **Sifted Bits Comparison**")
-            col_no, col_e = st.columns(2)
-            with col_no:
-                st.markdown("**No Eve (First {} Sifted Bits):**".format(min(sifted_display_size, sift_no)))
+            if sift_no > 0 or sift_e > 0:
+                st.markdown("### 📊 **QBER Analysis**")
+                fig, ax = plt.subplots(figsize=(10, 5))
+                # For No Eve
                 if sift_no > 0:
-                    show_n = min(sifted_display_size, sift_no)
-                    df_no = pd.DataFrame({
-                        "Alice": tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].iloc[:show_n].values,
-                        "Bob": tl_no_eve[tl_no_eve["Used"] == True]["BobResult"].iloc[:show_n].values,
-                        "Match": tl_no_eve[tl_no_eve["Used"] == True]["Error"].iloc[:show_n].apply(lambda x: not x).values
-                    })
-                    st.dataframe(df_no)
-                else:
-                    st.info("No sifted bits.")
+                    window_size = max(1, sift_no // 10)
+                    local_qbers_no = []
+                    for i in range(0, sift_no, window_size):
+                        a_w = tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].iloc[i:i + window_size].values
+                        b_w = tl_no_eve[tl_no_eve["Used"] == True]["BobResult"].iloc[i:i + window_size].values
+                        if len(a_w) > 0:
+                            local_qbers_no.append(float(np.mean(a_w != b_w)))
+                    ax.plot(local_qbers_no, 'bo-', label=f'No Eve Local QBER (Overall: {qber_no:.3f})')
 
-            with col_e:
-                st.markdown("**With Eve (First {} Sifted Bits):**".format(min(sifted_display_size, sift_e)))
+                # For With Eve
                 if sift_e > 0:
-                    show_n = min(sifted_display_size, sift_e)
-                    df_e = pd.DataFrame({
-                        "Alice": tl_eve[tl_eve["Used"] == True]["AliceBit"].iloc[:show_n].values,
-                        "Bob": tl_eve[tl_eve["Used"] == True]["BobResult"].iloc[:show_n].values,
-                        "Match": tl_eve[tl_eve["Used"] == True]["Error"].iloc[:show_n].apply(lambda x: not x).values
-                    })
-                    st.dataframe(df_e)
-                else:
-                    st.info("No sifted bits.")
+                    window_size = max(1, sift_e // 10)
+                    local_qbers_e = []
+                    for i in range(0, sift_e, window_size):
+                        a_w = tl_eve[tl_eve["Used"] == True]["AliceBit"].iloc[i:i + window_size].values
+                        b_w = tl_eve[tl_eve["Used"] == True]["BobResult"].iloc[i:i + window_size].values
+                        if len(a_w) > 0:
+                            local_qbers_e.append(float(np.mean(a_w != b_w)))
+                    ax.plot(local_qbers_e, 'ro-', label=f'With Eve Local QBER (Overall: {qber_e:.3f})')
 
-            st.plotly_chart(decision_line(qber_e, threshold, "**Attack Detection Decision Analysis**"),
-                            use_container_width=True, key="dec_line")
+                ax.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold {threshold}')
+                ax.set_xlabel('Window Index')
+                ax.set_ylabel('Error Rate')
+                ax.set_title('Quantum Bit Error Rate (QBER) Analysis')
+                ax.legend()
+                ax.grid(alpha=0.3)
+                st.pyplot(fig)
 
-        # Create tabs for additional analysis
-        tab2, tab3, tab4, tab5, tab6 = st.tabs(["Timeline Analysis", "Comparative Analysis", "Quantum Visualization", "Report Generation", "Protocol Guide"])
+                # Sifted Bits Table (from bb84_app2.py)
+                st.markdown("### 📋 **Sifted Bits Comparison**")
+                col_no, col_e = st.columns(2)
+                with col_no:
+                    st.markdown("**No Eve (First {} Sifted Bits):**".format(min(sifted_display_size, sift_no)))
+                    if sift_no > 0:
+                        show_n = min(sifted_display_size, sift_no)
+                        df_no = pd.DataFrame({
+                            "Alice": tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].iloc[:show_n].values,
+                            "Bob": tl_no_eve[tl_no_eve["Used"] == True]["BobResult"].iloc[:show_n].values,
+                            "Match": tl_no_eve[tl_no_eve["Used"] == True]["Error"].iloc[:show_n].apply(lambda x: not x).values
+                        })
+                        st.dataframe(df_no)
+                    else:
+                        st.info("No sifted bits.")
 
-        # ------------------ Timeline ------------------
-        with tab2:
-            st.markdown("### 📈 ** Timeline Analysis**")
+                with col_e:
+                    st.markdown("**With Eve (First {} Sifted Bits):**".format(min(sifted_display_size, sift_e)))
+                    if sift_e > 0:
+                        show_n = min(sifted_display_size, sift_e)
+                        df_e = pd.DataFrame({
+                            "Alice": tl_eve[tl_eve["Used"] == True]["AliceBit"].iloc[:show_n].values,
+                            "Bob": tl_eve[tl_eve["Used"] == True]["BobResult"].iloc[:show_n].values,
+                            "Match": tl_eve[tl_eve["Used"] == True]["Error"].iloc[:show_n].apply(lambda x: not x).values
+                        })
+                        st.dataframe(df_e)
+                    else:
+                        st.info("No sifted bits.")
 
-            # Scenario selection with radio button
-            mode = st.radio("**Select Scenario:**", ["Without Eve", "With Eve"],
-                          horizontal=True, index=0 if 'mode' not in st.session_state else (0 if st.session_state.mode == "Without Eve" else 1))
-            st.session_state.mode = mode
+                st.plotly_chart(decision_line(qber_e, threshold, "**Attack Detection Decision Analysis**"),
+                                use_container_width=True, key="dec_line")
 
-            TL = tl_no_eve if mode == "Without Eve" else tl_eve
+            # Create tabs for additional analysis
+            tab2, tab3, tab4, tab5, tab6 = st.tabs(["Timeline Analysis", "Comparative Analysis", "Quantum Visualization", "Report Generation", "Protocol Guide"])
 
-            # Visualization options
-            viz_col1, viz_col2, viz_col3 = st.columns(3)
-            with viz_col1:
-                show_pdf = st.checkbox("📄 **PDF Style Timeline**", value=True)
-            with viz_col2:
-                show_plotly = st.checkbox("📊 **Interactive Plotly**", value=True)
-            with viz_col3:
-                show_inspector = st.checkbox("🔍 **Qubit Inspector**", value=True)
-            fig_pdf = plot_pdf_style_timeline(TL, title=f"{mode} Scenario", max_bits=pdf_max)
-            st.pyplot(fig_pdf)
+            # ------------------ Timeline ------------------
+            with tab2:
+                st.markdown("### 📈 ** Timeline Analysis**")
 
-            st.markdown("---")
-            st.subheader("✅ Plotly Timeline (Self Interactive)")
-            start, end = st.slider("Select range", 0, len(TL) - 1, (0, min(len(TL) - 1, window)),
-                                   key=f"range_{mode}")
+                # Visualization options
+                viz_col1, viz_col2, viz_col3 = st.columns(3)
+                with viz_col1:
+                    show_pdf = st.checkbox("📄 **PDF Style Timeline**", value=True)
+                with viz_col2:
+                    show_plotly = st.checkbox("📊 **Interactive Plotly**", value=True)
+                with viz_col3:
+                    show_inspector = st.checkbox("🔍 **Qubit Inspector**", value=True)
 
-            st.plotly_chart(
-                plotly_bit_timeline(TL, start, end, title=f"{mode} - Plotly Timeline"),
-                use_container_width=True,
-                key=f"plotly_timeline_{mode}"
-            )
-            st.plotly_chart(
-                plotly_error_timeline(TL, start, end, title=f"{mode} - Error Timeline"),
-                use_container_width=True,
-                key=f"plotly_err_{mode}"
-            )
+                # Show both scenarios side by side
+                tl_col1, tl_col2 = st.columns(2)
+                with tl_col1:
+                    st.subheader("✅ **No Eavesdropper Scenario**")
+                    if show_pdf:
+                        fig_pdf_no = plot_pdf_style_timeline(tl_no_eve, title="No Eve Scenario", max_bits=pdf_max)
+                        st.pyplot(fig_pdf_no)
+                    if show_plotly:
+                        st.markdown("---")
+                        st.subheader("Plotly Timeline (Self Interactive)")
+                        start_no, end_no = st.slider("Select range", 0, len(tl_no_eve) - 1, (0, min(len(tl_no_eve) - 1, window)),
+                                                   key="range_no")
+                        st.plotly_chart(
+                            plotly_bit_timeline(tl_no_eve, start_no, end_no, title="No Eve - Plotly Timeline"),
+                            use_container_width=True,
+                            key="plotly_timeline_no"
+                        )
+                        st.plotly_chart(
+                            plotly_error_timeline(tl_no_eve, start_no, end_no, title="No Eve - Error Timeline"),
+                            use_container_width=True,
+                            key="plotly_err_no"
+                        )
+                    if show_inspector:
+                        st.markdown("---")
+                        st.subheader("Inspect Individual Qubit")
+                        inspect_idx_no = st.slider("Select Qubit Index to Inspect", start_no, end_no, start_no, key="inspect_no")
+                        bit = int(alice_bits[inspect_idx_no])
+                        basis = int(alice_bases[inspect_idx_no])
+                        bob_bit = int(tl_no_eve.loc[inspect_idx_no, "BobResult"])
+                        match = tl_no_eve.loc[inspect_idx_no, "BaseMatch"]
+                        error = tl_no_eve.loc[inspect_idx_no, "Error"]
+                        st.markdown(f"""
+                        **Index:** {inspect_idx_no}
+                        **Alice Bit:** {bit}, **Basis:** {basis} ({'Z' if basis==0 else 'X'})
+                        **Bob Basis:** {int(tl_no_eve.loc[inspect_idx_no, 'BobBasis'])}, **Bob Bit:** {bob_bit}
+                        **Basis Match:** {'Yes' if match else 'No'}, **Error:** {'Yes' if error else 'No'}
+                        **State:** {state_label(bit, basis)}
+                        """)
+                        # Add Bloch sphere visualization
+                        try:
+                            sv_inspect = get_statevector_from_bit_basis(bit, basis)
+                            st.markdown("**🧿 Bloch Sphere:**")
+                            fig_inspect = plotly_bloch_sphere([sv_inspect])
+                            st.plotly_chart(fig_inspect, use_container_width=True, key=f"bloch_inspect_no_{inspect_idx_no}")
+                        except Exception as e:
+                            st.error(f"❌ Bloch sphere failed: {e}")
 
-            st.markdown("---")
-            st.subheader("🔍 Inspect Individual Qubit")
-            inspect_idx = st.slider("Select Qubit Index to Inspect", start, end, start, key=f"inspect_{mode}")
-            bit = int(alice_bits[inspect_idx])
-            basis = int(alice_bases[inspect_idx])
-            bob_bit = int(TL.loc[inspect_idx, "BobResult"])
-            match = TL.loc[inspect_idx, "BaseMatch"]
-            error = TL.loc[inspect_idx, "Error"]
+                with tl_col2:
+                    st.subheader("🕵️ **Eavesdropper Present Scenario**")
+                    if show_pdf:
+                        fig_pdf_e = plot_pdf_style_timeline(tl_eve, title="With Eve Scenario", max_bits=pdf_max)
+                        st.pyplot(fig_pdf_e)
+                    if show_plotly:
+                        st.markdown("---")
+                        st.subheader("Plotly Timeline (Self Interactive)")
+                        start_e, end_e = st.slider("Select range", 0, len(tl_eve) - 1, (0, min(len(tl_eve) - 1, window)),
+                                                   key="range_e")
+                        st.plotly_chart(
+                            plotly_bit_timeline(tl_eve, start_e, end_e, title="With Eve - Plotly Timeline"),
+                            use_container_width=True,
+                            key="plotly_timeline_e"
+                        )
+                        st.plotly_chart(
+                            plotly_error_timeline(tl_eve, start_e, end_e, title="With Eve - Error Timeline"),
+                            use_container_width=True,
+                            key="plotly_err_e"
+                        )
+                    if show_inspector:
+                        st.markdown("---")
+                        st.subheader("Inspect Individual Qubit")
+                        inspect_idx_e = st.slider("Select Qubit Index to Inspect", start_e, end_e, start_e, key="inspect_e")
+                        bit = int(alice_bits[inspect_idx_e])
+                        basis = int(alice_bases[inspect_idx_e])
+                        bob_bit = int(tl_eve.loc[inspect_idx_e, "BobResult"])
+                        match = tl_eve.loc[inspect_idx_e, "BaseMatch"]
+                        error = tl_eve.loc[inspect_idx_e, "Error"]
+                        st.markdown(f"""
+                        **Index:** {inspect_idx_e}
+                        **Alice Bit:** {bit}, **Basis:** {basis} ({'Z' if basis==0 else 'X'})
+                        **Bob Basis:** {int(tl_eve.loc[inspect_idx_e, 'BobBasis'])}, **Bob Bit:** {bob_bit}
+                        **Basis Match:** {'Yes' if match else 'No'}, **Error:** {'Yes' if error else 'No'}
+                        **State:** {state_label(bit, basis)}
+                        """)
+                        # Add Bloch sphere visualization
+                        try:
+                            sv_inspect_e = get_statevector_from_bit_basis(bit, basis)
+                            st.markdown("**🧿 Bloch Sphere:**")
+                            fig_inspect_e = plotly_bloch_sphere([sv_inspect_e])
+                            st.plotly_chart(fig_inspect_e, use_container_width=True, key=f"bloch_inspect_e_{inspect_idx_e}")
+                        except Exception as e:
+                            st.error(f"❌ Bloch sphere failed: {e}")
 
-            st.markdown(f"""
-            **Index:** {inspect_idx}
-            **Alice Bit:** {bit}, **Basis:** {basis} ({'Z' if basis==0 else 'X'})
-            **Bob Basis:** {int(TL.loc[inspect_idx, 'BobBasis'])}, **Bob Bit:** {bob_bit}
-            **Basis Match:** {'Yes' if match else 'No'}, **Error:** {'Yes' if error else 'No'}
-            **State:** {state_label(bit, basis)}
-            """)
-
-            try:
-                sv = get_statevector_from_bit_basis(bit, basis)
-                st.pyplot(plot_bloch_multivector(sv))
-            except:
-                st.error("Bloch failed")
-
-            st.markdown("---")
-            st.subheader("� **Advanced Timeline Animation Controls**")
-
-            anim_col1, anim_col2, anim_col3, anim_col4 = st.columns(4)
-
-            with anim_col1:
-                if st.button("**Start Animation**",
-                           help="Begin animated timeline visualization",
-                           key=f"anim_start_{mode}"):
-                    st.session_state.anim_running = True
-
-            with anim_col2:
-                if st.button("**Pause Animation**",
-                           help="Pause the current animation",
-                           key=f"anim_pause_{mode}"):
-                    st.session_state.anim_running = False
-
-            with anim_col3:
-                if st.button("**Stop & Reset**",
-                           help="Stop animation and reset to beginning",
-                           key=f"anim_reset_{mode}"):
-                    st.session_state.anim_running = False
-                    st.session_state.anim_s = 0
-
-            with anim_col4:
-                if st.button("**Fast Forward**",
-                           help="Skip to end of timeline",
-                           key=f"anim_skip_{mode}"):
-                    st.session_state.anim_running = False
-                    st.session_state.anim_s = num_bits - window
-
-            anim_box = st.empty()
-
-            if st.session_state.anim_running:
-                step = max(10, window // 3)
-                for s in range(st.session_state.anim_s, num_bits, step):
-                    if not st.session_state.anim_running:
-                        st.session_state.anim_s = s
-                        break
-
-                    e = min(num_bits - 1, s + window)
-                    anim_box.plotly_chart(
-                        plotly_bit_timeline(TL, s, e, title=f"Animated Window: {s} → {e} ({mode})"),
-                        use_container_width=True,
-                        key=f"anim_{mode}_{s}_{e}"
-                    )
-                    time.sleep(speed)
-
-                if st.session_state.anim_running:
-                    st.session_state.anim_running = False
-                    st.session_state.anim_s = 0
-
-        # ------------------ Comparison PDF style ------------------
-        with tab3:
-            st.subheader("🆚 **Comparative Analysis: No Eve vs With Eve**")
-
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-            ax1.bar(["Transmitted", "Sifted", "Final Key"],
-                    [num_bits, sift_no, key_no], color=['skyblue', 'lightgreen', 'gold'])
-            ax1.set_title(f"No Eve (QBER: {qber_no:.3f})")
-            ax1.set_ylabel("Number of Bits")
-
-            ax2.bar(["Transmitted", "Sifted", "Final Key"],
-                    [num_bits, sift_e, key_e], color=['skyblue', 'salmon', 'darkred'])
-            ax2.set_title(f"With Eve (QBER: {qber_e:.3f})")
-            ax2.set_ylabel("Number of Bits")
-
-            plt.tight_layout()
-            st.pyplot(fig)
-
-            st.markdown("### 🔑 **Generated Keys**")
-            key_col1, key_col2 = st.columns(2)
-            with key_col1:
-                st.markdown("**No Eve Key:**")
-                if key_no > 0:
-                    key_no_str = ''.join(map(str, sim.privacy_amplification(tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].astype(int).tolist(), qber_no)))
-                    st.code(key_no_str[:100] + "..." if len(key_no_str) > 100 else key_no_str, language="text")
-                else:
-                    st.warning("No secure key generated.")
-
-            with key_col2:
-                st.markdown("**With Eve Key:**")
-                if key_e > 0:
-                    key_e_str = ''.join(map(str, sim.privacy_amplification(tl_eve[tl_eve["Used"] == True]["AliceBit"].astype(int).tolist(), qber_e)))
-                    st.code(key_e_str[:100] + "..." if len(key_e_str) > 100 else key_e_str, language="text")
-                else:
-                    st.error("No secure key generated due to eavesdropping.")
-
-            # Download buttons for keys
-            dl_col1, dl_col2 = st.columns(2)
-            with dl_col1:
-                if key_no > 0:
-                    key_no_bytes = bytes(key_no_str, 'utf-8')  # Assuming key_no_str is the full key
-                    st.download_button(
-                        label="**Download No Eve Key**",
-                        data=key_no_bytes,
-                        file_name="bb84_no_eve_key.txt",
-                        mime="text/plain",
-                        help="Download the secure key for No Eve scenario"
-                    )
-            with dl_col2:
-                if key_e > 0:
-                    key_e_bytes = bytes(key_e_str, 'utf-8')
-                    st.download_button(
-                        label="**Download With Eve Key**",
-                        data=key_e_bytes,
-                        file_name="bb84_with_eve_key.txt",
-                        mime="text/plain",
-                        help="Download the secure key for With Eve scenario"
-                    )
-
-            st.markdown("### Key Observation")
-            if qber_e > threshold:
-                st.error("🕵️ Eve detected: QBER exceeds threshold → Abort key exchange ✅")
-            else:
-                st.success("🔒 Channel secure: QBER below threshold ✅")
-
-        # ------------------ Bloch sphere ADVANCED ------------------
-        with tab4:
-            st.markdown("### 🧿 **Advanced Quantum State Visualization**")
-
-            # Mode selection buttons
-            mode_buttons_col1, mode_buttons_col2 = st.columns(2)
-            with mode_buttons_col1:
-                single_mode = st.button("🔍 **Single Qubit Analysis**", help="Analyze individual quantum states")
-            with mode_buttons_col2:
-                range_mode = st.button("📊 **Multi-Qubit Comparison**", help="Compare multiple quantum states")
-
-            if single_mode or not range_mode:
-                st.markdown("---")
-                st.subheader("🔍 **Single Qubit Quantum State Analysis**")
-                idx = st.slider("**Select Qubit Index**", 0, len(alice_bits) - 1, 0, key="bloch_idx")
-                bit = int(alice_bits[idx])
-                basis = int(alice_bases[idx])
-
-                # Enhanced display
-                state_col1, state_col2 = st.columns([1, 2])
-                with state_col1:
-                    st.markdown(f"""
-                    **🎯 Selected Qubit #{idx}:**
-                    - **Bit Value:** `{bit}` ({'🔵 |0⟩' if bit == 0 else '🔴 |1⟩'})
-                    - **Basis:** `{basis}` ({'➕ Z-Basis (Rectilinear)' if basis == 0 else '➖ X-Basis (Diagonal)'})
-                    - **Quantum State:** `{state_label(bit, basis)}`
-                    - **State Vector:** |ψ⟩ = {'|0⟩' if bit == 0 and basis == 0 else '|1⟩' if bit == 1 and basis == 0 else '|+⟩' if bit == 0 and basis == 1 else '|-⟩'}
-                    """)
-
-                with state_col2:
-                    try:
-                        sv = get_statevector_from_bit_basis(bit, basis)
-                        st.markdown("**🧿 Bloch Sphere Representation:**")
-                        # Use Plotly Bloch sphere for better interactivity
-                        fig = plotly_bloch_sphere([sv])
-                        st.plotly_chart(fig, use_container_width=True)
-
-                        # Add state vector display
-                        st.markdown("**📐 State Vector Details:**")
-                        st.code(f"Statevector: {sv}")
-
-                    except Exception as e:
-                        st.error(f"❌ Bloch sphere visualization failed: {e}")
-                        st.info("💡 Make sure Qiskit is properly installed")
-            else:
-                st.markdown("---")
-                st.subheader("📊 **Multi-Qubit Quantum State Comparison**")
-                start_idx, end_idx = st.slider("**Select Qubit Range**", 0, len(alice_bits) - 1, (0, min(10, len(alice_bits)-1)), key="bloch_range")
-
-                st.markdown(f"**Comparing qubits {start_idx} to {end_idx} ({end_idx - start_idx + 1} qubits)**")
-
-                states = []
-                state_info = []
-                for i in range(start_idx, end_idx + 1):
-                    bit = int(alice_bits[i])
-                    basis = int(alice_bases[i])
-                    sv = get_statevector_from_bit_basis(bit, basis)
-                    states.append(sv)
-                    state_info.append(f"Qubit {i}: {state_label(bit, basis)}")
-
-                # Display state information
-                st.markdown("**📋 Quantum States in Range:**")
-                for info in state_info:
-                    st.markdown(f"• {info}")
-
+            st.markdown("### 🧿 **Polarization Analysis**")
+            pol_col1, pol_col2 = st.columns(2)
+            with pol_col1:
+                st.subheader("Rectilinear Polarization (Z-Basis)")
+                st.markdown("""
+                **Z-Basis States:**
+                - **|0⟩ (North Pole)**: Horizontal polarization, represents classical bit 0
+                - **|1⟩ (South Pole)**: Vertical polarization, represents classical bit 1
+                - **Bloch Sphere**: Shows pure computational basis states
+                """)
                 try:
-                    st.markdown("**🌐 3D Bloch Sphere Multi-State View:**")
-                    st.plotly_chart(plotly_bloch_sphere(states), use_container_width=True)
-                    st.info("💡 Each point represents a quantum state. Hover for details.")
+                    sv0 = Statevector.from_label('0')
+                    sv1 = Statevector.from_label('1')
+                    fig_rect = plotly_bloch_sphere([sv0, sv1])
+                    st.plotly_chart(fig_rect, use_container_width=True, key="bloch_rect")
+                    st.markdown("**States:** |0⟩ (North Pole), |1⟩ (South Pole)")
                 except Exception as e:
-                    st.error(f"❌ Interactive Bloch sphere failed: {e}")
-                    st.info("💡 Falling back to individual visualizations...")
+                    st.error(f"❌ Failed to load rectilinear Bloch sphere: {e}")
+                    st.info("💡 This may occur if Qiskit visualization libraries are not installed")
+                
+                # Details
+                z_bits = [i for i, b in enumerate(alice_bases) if b == 0]
+                z_0 = sum(1 for i in z_bits if alice_bits[i] == 0)
+                z_1 = sum(1 for i in z_bits if alice_bits[i] == 1)
+                st.markdown(f"**Bits in Z-Basis:** {len(z_bits)} (|0⟩: {z_0}, |1⟩: {z_1})")
+                if z_bits:
+                    st.markdown("**Indices:** " + ", ".join(map(str, z_bits[:10])) + ("..." if len(z_bits) > 10 else ""))
 
-                    # Fallback to individual plots
-                    fallback_cols = st.columns(min(3, len(states)))
-                    for i, sv in enumerate(states):
-                        with fallback_cols[i % len(fallback_cols)]:
-                            st.pyplot(plot_bloch_multivector(sv))
-                            st.caption(f"Qubit {start_idx + i}")
+            with pol_col2:
+                st.subheader("Diagonal Polarization (X-Basis)")
+                st.markdown("""
+                **X-Basis States:**
+                - **|+⟩ (East)**: Equal superposition of |0⟩ and |1⟩ with + phase
+                - **|-⟩ (West)**: Equal superposition of |0⟩ and |1⟩ with - phase
+                - **Bloch Sphere**: Shows quantum superposition states on the equator
+                """)
+                try:
+                    # Create |+⟩ state: (|0⟩ + |1⟩)/√2
+                    sv_plus = Statevector([1/np.sqrt(2), 1/np.sqrt(2)])
+                    # Create |-⟩ state: (|0⟩ - |1⟩)/√2  
+                    sv_minus = Statevector([1/np.sqrt(2), -1/np.sqrt(2)])
+                    fig_diag = plotly_bloch_sphere([sv_plus, sv_minus])
+                    st.plotly_chart(fig_diag, use_container_width=True, key="bloch_diag")
+                    st.markdown("**States:** |+⟩ (East), |-⟩ (West)")
+                except Exception as e:
+                    st.error(f"❌ Failed to load diagonal Bloch sphere: {e}")
+                    st.info("💡 This may occur if Qiskit visualization libraries are not installed")
+                
+                # Details
+                x_bits = [i for i, b in enumerate(alice_bases) if b == 1]
+                x_plus = sum(1 for i in x_bits if alice_bits[i] == 0)
+                x_minus = sum(1 for i in x_bits if alice_bits[i] == 1)
+                st.markdown(f"**Bits in X-Basis:** {len(x_bits)} (| + ⟩: {x_plus}, | - ⟩: {x_minus})")
+                if x_bits:
+                    st.markdown("**Indices:** " + ", ".join(map(str, x_bits[:10])) + ("..." if len(x_bits) > 10 else ""))
 
-        # ------------------ Report ------------------
-        with tab5:
-            st.markdown("### 📄 **Professional Report Generation**")
+            # ------------------ Comparison PDF style ------------------
+            with tab3:
+                st.subheader("🆚 **Comparative Analysis: No Eve vs With Eve**")
 
-            # Report options
-            report_col1, report_col2, report_col3 = st.columns(3)
-            with report_col1:
-                include_charts = st.checkbox("📊 **Include Charts**", value=True)
-            with report_col2:
-                include_timeline = st.checkbox("📈 **Include Timeline**", value=True)
-            with report_col3:
-                detailed_analysis = st.checkbox("🔬 **Detailed Analysis**", value=True)
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+                ax1.bar(["Transmitted", "Sifted", "Final Key"],
+                        [num_bits, sift_no, key_no], color=['skyblue', 'lightgreen', 'gold'])
+                ax1.set_title(f"No Eve (QBER: {qber_no:.3f})")
+                ax1.set_ylabel("Number of Bits")
 
-            st.markdown("---")
-            st.subheader("📋 **Report Downloads**")
+                ax2.bar(["Transmitted", "Sifted", "Final Key"],
+                        [num_bits, sift_e, key_e], color=['skyblue', 'salmon', 'darkred'])
+                ax2.set_title(f"With Eve (QBER: {qber_e:.3f})")
+                ax2.set_ylabel("Number of Bits")
 
-            project_info = {
-                "University": "JNTUACEA",
-                "Department": "ECE",
-                "Project": "AQVH FINAL: Advanced BB84 QKD Simulator",
-                "Generated On": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "Total Qubits": num_bits,
-                "Eve Interception Probability": eve_prob,
-                "Eve Attack Type": eve_attack,
-                "Channel Noise Probability": noise_prob,
-                "QBER Threshold": threshold
-            }
+                plt.tight_layout()
+                st.pyplot(fig)
 
-            summary = {
-                "No Eve -> QBER": f"{qber_no:.4f}",
-                "No Eve -> Errors": err_no,
-                "No Eve -> Final Key Length": key_no,
-                "With Eve -> QBER": f"{qber_e:.4f}",
-                "With Eve -> Errors": err_e,
-                "With Eve -> Final Key Length": key_e
-            }
+                st.markdown("### 🔑 **Generated Keys**")
+                key_col1, key_col2 = st.columns(2)
+                with key_col1:
+                    st.markdown("**No Eve Key:**")
+                    if key_no > 0:
+                        key_no_str = ''.join(map(str, sim.privacy_amplification(tl_no_eve[tl_no_eve["Used"] == True]["AliceBit"].astype(int).tolist(), qber_no)))
+                        st.code(key_no_str[:100] + "..." if len(key_no_str) > 100 else key_no_str, language="text")
+                    else:
+                        st.warning("No secure key generated.")
 
-            # Download buttons with enhanced styling
-            dl_col1, dl_col2, dl_col3 = st.columns(3)
-            with dl_col1:
-                st.download_button(
-                    "📊 **CSV: No Eve Data**",
-                    data=tl_no_eve.to_csv(index=False).encode("utf-8"),
-                    file_name="AQVH_No_Eve_Timeline.csv",
-                    mime="text/csv",
-                    help="Download detailed timeline data for secure channel"
-                )
-            with dl_col2:
-                st.download_button(
-                    "🕵️ **CSV: With Eve Data**",
-                    data=tl_eve.to_csv(index=False).encode("utf-8"),
-                    file_name="AQVH_With_Eve_Timeline.csv",
-                    mime="text/csv",
-                    help="Download detailed timeline data for compromised channel"
-                )
-            with dl_col3:
-                pdf_bytes = create_pdf_report_with_graphs(
-                    project_info=project_info,
-                    summary=summary,
-                    timeline_df_no_eve=tl_no_eve,
-                    timeline_df_eve=tl_eve,
-                    num_bits=num_bits,
-                    sift_no=sift_no, key_no=key_no, qber_no=qber_no,
-                    sift_e=sift_e, key_e=key_e, qber_e=qber_e,
-                    threshold=threshold,
-                    pdf_max_bits=pdf_max
-                )
-                st.download_button(
-                    "📄 **PDF Full Report**",
-                    data=pdf_bytes,
-                    file_name="AQVH_FINAL_BB84_Report.pdf",
-                    mime="application/pdf",
-                    help="Download comprehensive PDF report with all analysis"
-                )
+                with key_col2:
+                    st.markdown("**With Eve Key:**")
+                    if key_e > 0:
+                        key_e_str = ''.join(map(str, sim.privacy_amplification(tl_eve[tl_eve["Used"] == True]["AliceBit"].astype(int).tolist(), qber_e)))
+                        st.code(key_e_str[:100] + "..." if len(key_e_str) > 100 else key_e_str, language="text")
+                    else:
+                        st.error("No secure key generated due to eavesdropping.")
 
-        # ------------------ BB84 Process Guide ------------------
-        with tab6:
-            st.header("📚 BB84 Quantum Key Distribution Process")
-            st.markdown("""
-            **BB84** is the first quantum key distribution protocol, proposed by Charles Bennett and Gilles Brassard in 1984. It allows two parties, Alice and Bob, to securely share a secret key over an insecure channel, with security guaranteed by quantum mechanics.
+                # Download buttons for keys
+                dl_col1, dl_col2 = st.columns(2)
+                with dl_col1:
+                    if key_no > 0:
+                        key_no_bytes = bytes(key_no_str, 'utf-8')  # Assuming key_no_str is the full key
+                        st.download_button(
+                            label="**Download No Eve Key**",
+                            data=key_no_bytes,
+                            file_name="bb84_no_eve_key.txt",
+                            mime="text/plain",
+                            help="Download the secure key for No Eve scenario"
+                        )
+                with dl_col2:
+                    if key_e > 0:
+                        key_e_bytes = bytes(key_e_str, 'utf-8')
+                        st.download_button(
+                            label="**Download With Eve Key**",
+                            data=key_e_bytes,
+                            file_name="bb84_with_eve_key.txt",
+                            mime="text/plain",
+                            help="Download the secure key for With Eve scenario"
+                        )
 
-            ### Steps of BB84:
-            1. **Key Generation by Alice:**
-               - Alice generates a random sequence of bits (0 or 1).
-               - For each bit, she randomly chooses a basis: Rectilinear (Z) or Diagonal (X).
-               - She prepares qubits accordingly:
-                 - Z basis: |0⟩ or |1⟩
-                 - X basis: |+⟩ = (|0⟩+|1⟩)/√2 or |-⟩ = (|0⟩-|1⟩)/√2
-               - Sends the qubits to Bob over a quantum channel.
+                st.markdown("### Key Observation")
+                if qber_e > threshold:
+                    st.error("🕵️ Eve detected: QBER exceeds threshold → Abort key exchange ✅")
+                else:
+                    st.success("🔒 Channel secure: QBER below threshold ✅")
 
-            2. **Measurement by Bob:**
-               - Bob randomly chooses a basis (Z or X) for each qubit.
-               - Measures the qubit in his chosen basis.
-               - Records the measurement result (0 or 1).
+            # ------------------ Bloch sphere ADVANCED ------------------
+            with tab4:
+                st.markdown("### 🧿 ** Quantum State Visualization**")
 
-            3. **Basis Announcement:**
-               - Alice and Bob publicly announce their chosen bases (not the bits).
-               - They keep only the bits where bases matched (sifted key).
-               - Discard bits where bases differed.
+                # Mode selection
+                viz_mode = st.radio("**Select Visualization Mode**", ["🔍 Single Qubit Analysis", "📊 Multi-Qubit Comparison"], 
+                                   index=0 if st.session_state.viz_mode == "single" else 1, 
+                                   horizontal=True, key="viz_radio")
+                if "Single" in viz_mode:
+                    st.session_state.viz_mode = "single"
+                else:
+                    st.session_state.viz_mode = "multi"
 
-            4. **Error Estimation:**
-               - Alice and Bob publicly compare a subset of the sifted key to estimate the Quantum Bit Error Rate (QBER).
-               - If QBER is below a threshold (e.g., 11%), proceed; else, abort.
+                if st.session_state.viz_mode == "single":
+                    st.markdown("---")
+                    st.subheader("🔍 **Single Qubit Quantum State Analysis**")
+                    idx = st.slider("**Select Qubit Index**", 0, len(alice_bits) - 1, 0, key="bloch_idx")
+                    bit = int(alice_bits[idx])
+                    basis = int(alice_bases[idx])
 
-            5. **Privacy Amplification:**
-               - Use hashing to distill a shorter, secure key from the sifted key.
-               - This removes information that might have leaked to an eavesdropper.
+                    # Enhanced display
+                    state_col1, state_col2 = st.columns([1, 2])
+                    with state_col1:
+                        st.markdown(f"""
+                        **🎯 Selected Qubit #{idx}:**
+                        - **Bit Value:** `{bit}` ({'🔵 |0⟩' if bit == 0 else '🔴 |1⟩'})
+                        - **Basis:** `{basis}` ({'➕ Z-Basis (Rectilinear)' if basis == 0 else '➖ X-Basis (Diagonal)'})
+                        - **Quantum State:** `{state_label(bit, basis)}`
+                        - **State Vector:** |ψ⟩ = {'|0⟩' if bit == 0 and basis == 0 else '|1⟩' if bit == 1 and basis == 0 else '|+⟩' if bit == 0 and basis == 1 else '|-⟩'}
+                        """)
 
-            ### Security:
-            - Any eavesdropping (Eve intercepting qubits) introduces errors detectable by QBER.
-            - Quantum no-cloning theorem prevents perfect copying without detection.
+                    with state_col2:
+                        try:
+                            sv = get_statevector_from_bit_basis(bit, basis)
+                            st.markdown("**🧿 Bloch Sphere Representation:**")
+                            st.markdown("""
+                            **What the Bloch Sphere Shows:**
+                            - **Position on sphere**: Represents the quantum state of the qubit
+                            - **North Pole (Z=1)**: |0⟩ state (classical bit 0)
+                            - **South Pole (Z=-1)**: |1⟩ state (classical bit 1)
+                            - **Equatorial plane**: Superposition states (| + ⟩, | - ⟩)
+                            - **X-axis**: Real part of superposition amplitude
+                            - **Y-axis**: Imaginary part of superposition amplitude
+                            - **Z-axis**: Probability difference between |0⟩ and |1⟩
+                            
+                            **The Bloch sphere visualizes the complete quantum state of a single qubit, showing how quantum bits can exist in superposition states that classical bits cannot.**
+                            """)
+                            # Use Plotly Bloch sphere for better interactivity
+                            fig = plotly_bloch_sphere([sv])
+                            st.plotly_chart(fig, use_container_width=True, key=f"bloch_{idx}")
 
-            ### This Simulator:
-            - Simulates the above process with/without Eve.
-            - Includes channel noise.
-            - Visualizes timelines, Bloch spheres, and generates reports.
-            """)
+                            # Add state vector display
+                            st.markdown("**📐 State Vector Details:**")
+                            st.code(f"Statevector: {sv}")
 
-    else:
-        st.info("Click **Run Simulation** to generate results.")
+                        except Exception as e:
+                            st.error(f"❌ Bloch sphere visualization failed: {e}")
+                            st.info("💡 Make sure Qiskit is properly installed")
+                elif st.session_state.viz_mode == "multi":
+                    st.markdown("---")
+                    st.subheader("📊 **Multi-Qubit Quantum State Comparison**")
+                    start_idx, end_idx = st.slider("**Select Qubit Range**", 0, len(alice_bits) - 1, (0, min(10, len(alice_bits)-1)), key="bloch_range")
+
+                    st.markdown(f"**Comparing qubits {start_idx} to {end_idx} ({end_idx - start_idx + 1} qubits)**")
+
+                    states = []
+                    state_info = []
+                    for i in range(start_idx, end_idx + 1):
+                        bit = int(alice_bits[i])
+                        basis = int(alice_bases[i])
+                        sv = get_statevector_from_bit_basis(bit, basis)
+                        states.append(sv)
+                        state_info.append(f"Qubit {i}: {state_label(bit, basis)}")
+
+                    # Display state information
+                    st.markdown("**📋 Quantum States in Range:**")
+                    for info in state_info:
+                        st.markdown(f"• {info}")
+
+                    try:
+                        st.markdown("**🌐 3D Bloch Sphere Multi-State View:**")
+                        st.plotly_chart(plotly_bloch_sphere(states), use_container_width=True, key="bloch_multi")
+                        st.info("💡 Each point represents a quantum state. Hover for details.")
+                    except Exception as e:
+                        st.error(f"❌ Multi-qubit Bloch sphere visualization failed: {e}")
+                        st.info("💡 This may occur if Qiskit or Plotly libraries are not properly installed. Falling back to individual visualizations...")
+
+                        # Fallback to individual plots
+                        fallback_cols = st.columns(min(3, len(states)))
+                        for i, sv in enumerate(states):
+                            with fallback_cols[i % len(fallback_cols)]:
+                                try:
+                                    st.pyplot(plot_bloch_multivector(sv))
+                                    st.caption(f"Qubit {start_idx + i}")
+                                except Exception as e2:
+                                    st.error(f"❌ Fallback visualization also failed for qubit {start_idx + i}: {e2}")
+
+            # ------------------ Report ------------------
+            with tab5:
+                st.markdown("### 📄 **Professional Report Generation**")
+
+                # Report options
+                report_col1, report_col2, report_col3 = st.columns(3)
+                with report_col1:
+                    include_charts = st.checkbox("📊 **Include Charts**", value=True)
+                with report_col2:
+                    include_timeline = st.checkbox("📈 **Include Timeline**", value=True)
+                with report_col3:
+                    detailed_analysis = st.checkbox("🔬 **Detailed Analysis**", value=True)
+
+                st.markdown("---")
+                st.subheader("📋 **Report Downloads**")
+
+                project_info = {
+                    "University": "JNTUA College of Engineering Anantapur (JNTUACEA)",
+                    "Department": "ECE",
+                    "Project": "AQVH FINAL: BB84 QKD Simulator",
+                    "Team": "Team Silicon",
+                    "Generated On": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                    "Total Qubits": num_bits,
+                    "Eve Interception Probability": eve_prob,
+                    "Eve Attack Type": eve_attack,
+                    "Channel Noise Probability": noise_prob,
+                    "QBER Threshold": threshold
+                }
+
+                summary = {
+                    "No Eve -> QBER": f"{qber_no:.4f}",
+                    "No Eve -> Errors": err_no,
+                    "No Eve -> Final Key Length": key_no,
+                    "With Eve -> QBER": f"{qber_e:.4f}",
+                    "With Eve -> Errors": err_e,
+                    "With Eve -> Final Key Length": key_e
+                }
+
+                # Download buttons with enhanced styling
+                dl_col1, dl_col2, dl_col3 = st.columns(3)
+                with dl_col1:
+                    st.download_button(
+                        "📊 **CSV: No Eve Data**",
+                        data=tl_no_eve.to_csv(index=False).encode("utf-8"),
+                        file_name="AQVH_No_Eve_Timeline.csv",
+                        mime="text/csv",
+                        help="Download detailed timeline data for secure channel"
+                    )
+                with dl_col2:
+                    st.download_button(
+                        "🕵️ **CSV: With Eve Data**",
+                        data=tl_eve.to_csv(index=False).encode("utf-8"),
+                        file_name="AQVH_With_Eve_Timeline.csv",
+                        mime="text/csv",
+                        help="Download detailed timeline data for compromised channel"
+                    )
+                with dl_col3:
+                    pdf_bytes = create_pdf_report_with_graphs(
+                        project_info=project_info,
+                        summary=summary,
+                        timeline_df_no_eve=tl_no_eve,
+                        timeline_df_eve=tl_eve,
+                        num_bits=num_bits,
+                        sift_no=sift_no, key_no=key_no, qber_no=qber_no,
+                        sift_e=sift_e, key_e=key_e, qber_e=qber_e,
+                        threshold=threshold,
+                        pdf_max_bits=pdf_max
+                    )
+                    st.download_button(
+                        "📄 **PDF Full Report**",
+                        data=pdf_bytes,
+                        file_name="AQVH_FINAL_BB84_Report.pdf",
+                        mime="application/pdf",
+                        help="Download comprehensive PDF report with all analysis"
+                    )
+
+            # ------------------ BB84 Process Guide ------------------
+            with tab6:
+                st.header("📚 BB84 Quantum Key Distribution Process")
+                st.markdown("""
+                **BB84** is the first quantum key distribution protocol, proposed by Charles Bennett and Gilles Brassard in 1984. It allows two parties, Alice and Bob, to securely share a secret key over an insecure channel, with security guaranteed by quantum mechanics.
+
+                ### Steps of BB84:
+                1. **Key Generation by Alice:**
+                   - Alice generates a random sequence of bits (0 or 1).
+                   - For each bit, she randomly chooses a basis: Rectilinear (Z) or Diagonal (X).
+                   - She prepares qubits accordingly:
+                     - Z basis: |0⟩ or |1⟩
+                     - X basis: |+⟩ = (|0⟩+|1⟩)/√2 or |-⟩ = (|0⟩-|1⟩)/√2
+                   - Sends the qubits to Bob over a quantum channel.
+
+                2. **Measurement by Bob:**
+                   - Bob randomly chooses a basis (Z or X) for each qubit.
+                   - Measures the qubit in his chosen basis.
+                   - Records the measurement result (0 or 1).
+
+                3. **Basis Announcement:**
+                   - Alice and Bob publicly announce their chosen bases (not the bits).
+                   - They keep only the bits where bases matched (sifted key).
+                   - Discard bits where bases differed.
+
+                4. **Error Estimation:**
+                   - Alice and Bob publicly compare a subset of the sifted key to estimate the Quantum Bit Error Rate (QBER).
+                   - If QBER is below a threshold (e.g., 11%), proceed; else, abort.
+
+                5. **Privacy Amplification:**
+                   - Use hashing to distill a shorter, secure key from the sifted key.
+                   - This removes information that might have leaked to an eavesdropper.
+
+                ### Security:
+                - Any eavesdropping (Eve intercepting qubits) introduces errors detectable by QBER.
+                - Quantum no-cloning theorem prevents perfect copying without detection.
+
+                ### This Simulator:
+                - Simulates the above process with/without Eve.
+                - Includes channel noise.
+                - Visualizes timelines, Bloch spheres, and generates reports.
+                """)
 
 
 if __name__ == "__main__":
