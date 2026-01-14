@@ -6,3 +6,7 @@ plotly==5.22.0
 
 qiskit==1.0.2
 qiskit-aer==0.13.3
+
+# Required Qiskit visualization
+pylatexenc==2.10
+pillow==10.4.0
