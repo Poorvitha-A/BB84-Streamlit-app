@@ -279,7 +279,7 @@ def render_report_generation():
         "With Eve -> Final Key Length": key_e
     }
 
-    dl_col1, dl_col2, dl_col3 = st.columns(3)
+    dl_col1, dl_col2 = st.columns(2)
     with dl_col1:
         st.download_button(
             "📊 **CSV: No Eve Data**",
@@ -295,34 +295,6 @@ def render_report_generation():
             file_name="AQVH_With_Eve_Timeline.csv",
             mime="text/csv",
             help="Download detailed timeline data for compromised channel"
-        )
-    with dl_col3:
-        @st.cache_data
-        def get_pdf_bytes():
-            project_info_tuple = tuple(sorted(project_info.items()))
-            summary_tuple = tuple(sorted(summary.items()))
-            timeline_csv_no_eve = tl_no_eve.to_csv(index=False)
-            timeline_csv_eve = tl_eve.to_csv(index=False)
-            
-            return create_pdf_report_with_graphs(
-                project_info=project_info_tuple,
-                summary=summary_tuple,
-                timeline_df_no_eve_csv=timeline_csv_no_eve,
-                timeline_df_eve_csv=timeline_csv_eve,
-                num_bits=num_bits,
-                sift_no=sift_no, key_no=key_no, qber_no=qber_no,
-                sift_e=sift_e, key_e=key_e, qber_e=qber_e,
-                threshold=threshold,
-                pdf_max_bits=pdf_max
-            )
-        
-        pdf_bytes = get_pdf_bytes()
-        st.download_button(
-            "📄 **PDF Full Report**",
-            data=pdf_bytes,
-            file_name="AQVH_FINAL_BB84_Report.pdf",
-            mime="application/pdf",
-            help="Download comprehensive PDF report with all analysis"
         )
 
 
